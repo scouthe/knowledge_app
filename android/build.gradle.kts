@@ -1,3 +1,5 @@
+import com.android.build.gradle.BaseExtension
+
 allprojects {
     repositories {
         maven { url = uri("https://mirrors.cloud.tencent.com/nexus/repository/maven-public/") }
@@ -5,6 +7,35 @@ allprojects {
         maven { url = uri("https://maven.aliyun.com/repository/google") }
         google()
         mavenCentral()
+    }
+}
+
+subprojects {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+    tasks.withType<JavaCompile>().configureEach {
+        sourceCompatibility = "17"
+        targetCompatibility = "17"
+    }
+
+    plugins.withId("com.android.library") {
+        extensions.configure<BaseExtension> {
+            compileOptions {
+                sourceCompatibility = JavaVersion.VERSION_17
+                targetCompatibility = JavaVersion.VERSION_17
+            }
+        }
+    }
+    plugins.withId("com.android.application") {
+        extensions.configure<BaseExtension> {
+            compileOptions {
+                sourceCompatibility = JavaVersion.VERSION_17
+                targetCompatibility = JavaVersion.VERSION_17
+            }
+        }
     }
 }
 

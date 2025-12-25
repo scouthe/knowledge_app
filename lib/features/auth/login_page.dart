@@ -20,6 +20,24 @@ class _LoginPageState extends State<LoginPage> {
   bool _loading = false;
 
   @override
+  void initState() {
+    super.initState();
+    _tryAutoLogin();
+  }
+
+  Future<void> _tryAutoLogin() async {
+    final token = await _storage.readToken();
+    final user = await _storage.readUser();
+    if (token != null && token.isNotEmpty && user != null && user.isNotEmpty) {
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => IngestPage(username: user)),
+      );
+    }
+  }
+
+  @override
   void dispose() {
     _userCtrl.dispose();
     _passCtrl.dispose();
