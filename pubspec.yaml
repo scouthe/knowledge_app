@@ -1,0 +1,17 @@
+name: knowledge_app
+description: Knowledge OS mobile client (MVP)
+version: 0.1.0+1
+publish_to: "none"
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  shared_preferences: ^2.2.2
+  file_picker: ^8.0.0
+
+flutter:
+  uses-material-design: true
