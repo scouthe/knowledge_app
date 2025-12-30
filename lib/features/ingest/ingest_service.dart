@@ -65,6 +65,31 @@ class IngestService {
     return data['job_id'] as String? ?? '';
   }
 
+  Future<String> uploadImage(String path,
+      {String? text, String? category, String? folder}) async {
+    final uri = Uri.parse('${AppConfig.baseUrl}/api/ingest_image');
+    final request = http.MultipartRequest('POST', uri);
+    request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(await http.MultipartFile.fromPath('file', path));
+    if (text != null && text.isNotEmpty) {
+      request.fields['text'] = text;
+    }
+    if (category != null && category.isNotEmpty) {
+      request.fields['category'] = category;
+    }
+    if (folder != null && folder.isNotEmpty) {
+      request.fields['folder'] = folder;
+    }
+    final streamed = await request.send();
+    final res = await http.Response.fromStream(streamed);
+    if (res.statusCode != 200) {
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      throw Exception(data['detail'] ?? '图片上传失败');
+    }
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    return data['job_id'] as String? ?? '';
+  }
+
   Future<Map<String, dynamic>> checkStatus(String jobId) async {
     final client = ApiClient(token: token);
     final res = await client.get('/api/status/$jobId');

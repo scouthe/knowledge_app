@@ -3,6 +3,8 @@ import 'dart:math';
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import '../../core/auth_storage.dart';
@@ -32,6 +34,7 @@ class _IngestPageState extends State<IngestPage> {
   String _mode = 'note';
   bool _loading = false;
   bool _recording = false;
+  String? _imagePath;
   String? _recordPath;
   Timer? _timer;
   Timer? _waveTimer;
@@ -107,9 +110,28 @@ class _IngestPageState extends State<IngestPage> {
 
   Future<void> _submit() async {
     if (_token == null || _token!.isEmpty) return;
+    if (_textCtrl.text.trim().isEmpty && _imagePath == null) return;
     setState(() => _loading = true);
     try {
       final service = IngestService(_token!);
+      if (_imagePath != null) {
+        final category = _selectedCategory == '(默认)' ? '' : _selectedCategory;
+        final jobId = await service.uploadImage(
+          _imagePath!,
+          text: _textCtrl.text.trim(),
+          category: category,
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('已入队: $jobId')),
+        );
+        await NotificationService.instance.show('图片入库中', 'Job: $jobId');
+        _notifyStatus(jobId);
+        _textCtrl.clear();
+        setState(() => _imagePath = null);
+        return;
+      }
+
       final folder = _folderValue();
       final res = await service.ingestText(
         _textCtrl.text,
@@ -129,6 +151,32 @@ class _IngestPageState extends State<IngestPage> {
       await NotificationService.instance.show('入库失败', e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.camera);
+    if (picked == null) return;
+    final compressed = await _compressImage(picked.path);
+    if (!mounted) return;
+    setState(() => _imagePath = compressed ?? picked.path);
+  }
+
+  Future<String?> _compressImage(String path) async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final target = '${dir.path}/img_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final result = await FlutterImageCompress.compressAndGetFile(
+        path,
+        target,
+        quality: 80,
+        minWidth: 1600,
+        minHeight: 1600,
+      );
+      return result?.path;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -340,6 +388,38 @@ class _IngestPageState extends State<IngestPage> {
                 border: OutlineInputBorder(),
               ),
             ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _loading ? null : _pickImage,
+                    icon: const Icon(Icons.photo_camera),
+                    label: const Text('拍照'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _imagePath == null
+                        ? null
+                        : () => setState(() => _imagePath = null),
+                    child: const Text('清除图片'),
+                  ),
+                ),
+              ],
+            ),
+            if (_imagePath != null) ...[
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(
+                  File(_imagePath!),
+                  height: 140,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             Row(
               children: [
