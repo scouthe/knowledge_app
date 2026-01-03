@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/api_client.dart';
+import '../../core/auth_guard.dart';
 import '../../core/auth_storage.dart';
 import 'chat_service.dart';
 
@@ -37,6 +39,10 @@ class _ChatPageState extends State<ChatPage> {
         _messages.add({'role': 'assistant', 'content': answer});
       });
     } catch (e) {
+      if (e is AuthExpiredException) {
+        await AuthGuard.logout(context, message: '登录已过期，请重新登录');
+        return;
+      }
       setState(() {
         _messages.add({'role': 'assistant', 'content': e.toString()});
       });

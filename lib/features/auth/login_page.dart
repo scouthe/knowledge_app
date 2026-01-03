@@ -29,11 +29,16 @@ class _LoginPageState extends State<LoginPage> {
     final token = await _storage.readToken();
     final user = await _storage.readUser();
     if (token != null && token.isNotEmpty && user != null && user.isNotEmpty) {
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => IngestPage(username: user)),
-      );
+      try {
+        final verifiedUser = await _auth.verifyToken(token);
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => IngestPage(username: verifiedUser)),
+        );
+      } catch (_) {
+        await _storage.clear();
+      }
     }
   }
 

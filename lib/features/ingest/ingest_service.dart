@@ -39,6 +39,9 @@ class IngestService {
     }
     final streamed = await request.send();
     final res = await http.Response.fromStream(streamed);
+    if (res.statusCode == 401) {
+      throw AuthExpiredException();
+    }
     if (res.statusCode != 200) {
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       throw Exception(data['detail'] ?? '上传失败');
@@ -57,6 +60,9 @@ class IngestService {
     }
     final streamed = await request.send();
     final res = await http.Response.fromStream(streamed);
+    if (res.statusCode == 401) {
+      throw AuthExpiredException();
+    }
     if (res.statusCode != 200) {
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       throw Exception(data['detail'] ?? '语音上传失败');
@@ -82,6 +88,9 @@ class IngestService {
     }
     final streamed = await request.send();
     final res = await http.Response.fromStream(streamed);
+    if (res.statusCode == 401) {
+      throw AuthExpiredException();
+    }
     if (res.statusCode != 200) {
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       throw Exception(data['detail'] ?? '图片上传失败');

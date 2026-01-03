@@ -19,6 +19,17 @@ class AuthService {
     return User.fromJson(data);
   }
 
+  Future<String> verifyToken(String token) async {
+    final client = ApiClient(token: token);
+    final res = await client.get('/auth/me');
+    if (res.statusCode != 200) {
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      throw Exception(data['detail'] ?? 'Token invalid');
+    }
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    return data['username'] as String? ?? '';
+  }
+
   Future<void> resetPassword(
       String username, String oldPass, String newPass) async {
     final client = ApiClient();

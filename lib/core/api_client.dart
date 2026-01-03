@@ -2,6 +2,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'config.dart';
 
+class AuthExpiredException implements Exception {
+  AuthExpiredException([this.message = 'Token expired']);
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 class ApiClient {
   ApiClient({this.token});
 
@@ -21,6 +29,9 @@ class ApiClient {
     final res = await http
         .post(uri, headers: _headers(), body: jsonEncode(body))
         .timeout(timeout ?? AppConfig.requestTimeout);
+    if (res.statusCode == 401) {
+      throw AuthExpiredException();
+    }
     return res;
   }
 
@@ -29,6 +40,9 @@ class ApiClient {
     final res = await http
         .get(uri, headers: _headers())
         .timeout(timeout ?? AppConfig.requestTimeout);
+    if (res.statusCode == 401) {
+      throw AuthExpiredException();
+    }
     return res;
   }
 
@@ -37,6 +51,9 @@ class ApiClient {
     final res = await http
         .delete(uri, headers: _headers())
         .timeout(timeout ?? AppConfig.requestTimeout);
+    if (res.statusCode == 401) {
+      throw AuthExpiredException();
+    }
     return res;
   }
 }

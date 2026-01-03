@@ -7,6 +7,8 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import '../../core/api_client.dart';
+import '../../core/auth_guard.dart';
 import '../../core/auth_storage.dart';
 import '../../core/notification_service.dart';
 import '../../core/share_store.dart';
@@ -15,6 +17,7 @@ import '../admin/admin_page.dart';
 import '../chat/chat_page.dart';
 import '../summary/daily_summary_page.dart';
 import '../timeline/recent_page.dart';
+import '../auth/auth_service.dart';
 import 'category_service.dart';
 import 'ingest_service.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
@@ -74,8 +77,22 @@ class _IngestPageState extends State<IngestPage> {
     final token = await storage.readToken();
     setState(() => _token = token);
     if (token != null) {
+      await _validateToken(token);
       await _loadCategories(token);
     }
+  }
+
+  Future<void> _validateToken(String token) async {
+    try {
+      await AuthService().verifyToken(token);
+    } catch (_) {
+      if (!mounted) return;
+      await AuthGuard.logout(context, message: '登录已过期，请重新登录');
+    }
+  }
+
+  Future<void> _logout() async {
+    await AuthGuard.logout(context);
   }
 
   Future<void> _loadCategories(String token) async {
@@ -145,6 +162,10 @@ class _IngestPageState extends State<IngestPage> {
       await NotificationService.instance.show('入库任务已创建', 'Job: ${res.jobId}');
       _notifyStatus(res.jobId);
     } catch (e) {
+      if (e is AuthExpiredException) {
+        await AuthGuard.logout(context, message: '登录已过期，请重新登录');
+        return;
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(e.toString())));
@@ -199,6 +220,10 @@ class _IngestPageState extends State<IngestPage> {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('分类已创建')));
     } catch (e) {
+      if (e is AuthExpiredException) {
+        await AuthGuard.logout(context, message: '登录已过期，请重新登录');
+        return;
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(e.toString())));
@@ -220,6 +245,10 @@ class _IngestPageState extends State<IngestPage> {
       await NotificationService.instance.show('文件入库中', 'Job: $jobId');
       _notifyStatus(jobId);
     } catch (e) {
+      if (e is AuthExpiredException) {
+        await AuthGuard.logout(context, message: '登录已过期，请重新登录');
+        return;
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(e.toString())));
@@ -281,6 +310,10 @@ class _IngestPageState extends State<IngestPage> {
       await NotificationService.instance.show('语音入库中', 'Job: $jobId');
       _notifyStatus(jobId);
     } catch (e) {
+      if (e is AuthExpiredException) {
+        await AuthGuard.logout(context, message: '登录已过期，请重新登录');
+        return;
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
@@ -308,7 +341,11 @@ class _IngestPageState extends State<IngestPage> {
           );
           return;
         }
-      } catch (_) {
+      } catch (e) {
+        if (e is AuthExpiredException) {
+          await AuthGuard.logout(context, message: '登录已过期，请重新登录');
+          return;
+        }
         continue;
       }
     }
@@ -336,6 +373,10 @@ class _IngestPageState extends State<IngestPage> {
       appBar: AppBar(
         title: Text('欢迎 ${widget.username}'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+          ),
           IconButton(
             icon: const Icon(Icons.chat),
             onPressed: () {

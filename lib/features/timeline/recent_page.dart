@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/api_client.dart';
+import '../../core/auth_guard.dart';
 import '../../core/auth_storage.dart';
 import '../../widgets/primary_button.dart';
 import 'timeline_service.dart';
@@ -23,6 +25,10 @@ class _RecentPageState extends State<RecentPage> {
       final res = await service.listByDay(offset);
       setState(() => _content = res);
     } catch (e) {
+      if (e is AuthExpiredException) {
+        await AuthGuard.logout(context, message: '登录已过期，请重新登录');
+        return;
+      }
       setState(() => _content = e.toString());
     } finally {
       setState(() => _loading = false);

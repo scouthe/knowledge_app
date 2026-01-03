@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../core/api_client.dart';
+import '../../core/auth_guard.dart';
 import '../../core/auth_storage.dart';
 import '../../widgets/primary_button.dart';
 import 'summary_service.dart';
@@ -30,6 +32,10 @@ class _DailySummaryPageState extends State<DailySummaryPage> {
       }
       setState(() {});
     } catch (e) {
+      if (e is AuthExpiredException) {
+        await AuthGuard.logout(context, message: '登录已过期，请重新登录');
+        return;
+      }
       setState(() => _result = e.toString());
     } finally {
       setState(() => _loading = false);

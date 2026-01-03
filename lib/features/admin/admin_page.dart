@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/api_client.dart';
+import '../../core/auth_guard.dart';
 import '../../core/auth_storage.dart';
 import '../../widgets/primary_button.dart';
 import 'admin_service.dart';
@@ -41,6 +43,10 @@ class _AdminPageState extends State<AdminPage> {
       final list = await svc.listUsers();
       setState(() => _users = list);
     } catch (e) {
+      if (e is AuthExpiredException) {
+        await AuthGuard.logout(context, message: '登录已过期，请重新登录');
+        return;
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(e.toString())));
@@ -55,6 +61,10 @@ class _AdminPageState extends State<AdminPage> {
       await svc.createUser(_newUserCtrl.text, _newPassCtrl.text);
       await _loadUsers();
     } catch (e) {
+      if (e is AuthExpiredException) {
+        await AuthGuard.logout(context, message: '登录已过期，请重新登录');
+        return;
+      }
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(e.toString())));
     }
@@ -65,6 +75,10 @@ class _AdminPageState extends State<AdminPage> {
       final svc = await _service();
       await svc.resetPassword(_resetUserCtrl.text, _resetPassCtrl.text);
     } catch (e) {
+      if (e is AuthExpiredException) {
+        await AuthGuard.logout(context, message: '登录已过期，请重新登录');
+        return;
+      }
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(e.toString())));
     }
@@ -76,6 +90,10 @@ class _AdminPageState extends State<AdminPage> {
       await svc.deleteUser(_delUserCtrl.text);
       await _loadUsers();
     } catch (e) {
+      if (e is AuthExpiredException) {
+        await AuthGuard.logout(context, message: '登录已过期，请重新登录');
+        return;
+      }
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(e.toString())));
     }
